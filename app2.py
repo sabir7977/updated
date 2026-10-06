@@ -514,6 +514,7 @@ with st.expander(
         "#### Hyperparameters & Configuration"
     )
 
+
     st.write(
         "- **Estimators:** 100 Trees\n"
         "- **Max Depth:** 10\n"
@@ -539,6 +540,89 @@ with st.expander(
 
     st.dataframe(
         df_report,
+        use_container_width=True
+    )
+
+
+    # ========================================================
+    # CONFUSION MATRIX
+    # ========================================================
+
+    st.markdown(
+        "#### Confusion Matrix"
+    )
+
+    cm = info["confusion_matrix"]
+
+    fig_cm, ax_cm = plt.subplots(
+        figsize=(6, 5)
+    )
+
+    ax_cm.imshow(
+        cm,
+        interpolation="nearest",
+        cmap=plt.cm.Blues
+    )
+
+    ax_cm.set_title(
+        "Confusion Matrix"
+    )
+
+    ax_cm.set_xlabel(
+        "Predicted Label"
+    )
+
+    ax_cm.set_ylabel(
+        "Actual Label"
+    )
+
+    ax_cm.set_xticks(
+        [0, 1]
+    )
+
+    ax_cm.set_yticks(
+        [0, 1]
+    )
+
+    ax_cm.set_xticklabels(
+        ["Absent", "Present"]
+    )
+
+    ax_cm.set_yticklabels(
+        ["Absent", "Present"]
+    )
+
+    # Display values inside matrix
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[1]):
+
+            ax_cm.text(
+                j,
+                i,
+                cm[i, j],
+                ha="center",
+                va="center"
+            )
+
+    plt.tight_layout()
+
+    st.pyplot(
+        fig_cm
+    )
+
+    # Confusion matrix table
+    st.markdown(
+        "#### Confusion Matrix Values"
+    )
+
+    cm_df = pd.DataFrame(
+        cm,
+        index=["Actual Absent", "Actual Present"],
+        columns=["Predicted Absent", "Predicted Present"]
+    )
+
+    st.dataframe(
+        cm_df,
         use_container_width=True
     )
 
