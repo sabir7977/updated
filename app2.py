@@ -18,16 +18,33 @@ warnings.filterwarnings("ignore")
 
 
 # ============================================================
-# 1. TRAIN AND CACHE MODEL & METRICS
+# PAGE CONFIGURATION
+# ============================================================
+
+st.set_page_config(
+    page_title="Student Attendance Prediction",
+    page_icon="🎓",
+    layout="centered"
+)
+
+
+# ============================================================
+# 1. TRAIN AND CACHE MODEL
 # ============================================================
 
 @st.cache_resource
 def get_trained_model():
 
+    # --------------------------------------------------------
     # Load dataset
+    # --------------------------------------------------------
+
     df = pd.read_csv("Attendance_Prediction_2000.csv")
 
+    # --------------------------------------------------------
     # Separate features and target
+    # --------------------------------------------------------
+
     X = df.drop(
         columns=[
             "student_id",
@@ -38,7 +55,10 @@ def get_trained_model():
 
     y = df["attendance"]
 
+    # --------------------------------------------------------
     # Identify categorical and numerical columns
+    # --------------------------------------------------------
+
     categorical_cols = X.select_dtypes(
         include=["object"]
     ).columns.tolist()
@@ -47,9 +67,9 @@ def get_trained_model():
         include=["int64", "float64"]
     ).columns.tolist()
 
-    # ========================================================
-    # PREPROCESSING
-    # ========================================================
+    # --------------------------------------------------------
+    # Preprocessing
+    # --------------------------------------------------------
 
     preprocessor = ColumnTransformer(
         transformers=[
@@ -71,9 +91,9 @@ def get_trained_model():
         ]
     )
 
-    # ========================================================
-    # RANDOM FOREST
-    # ========================================================
+    # --------------------------------------------------------
+    # Random Forest Classifier
+    # --------------------------------------------------------
 
     pipeline = Pipeline(
         steps=[
@@ -94,9 +114,9 @@ def get_trained_model():
         ]
     )
 
-    # ========================================================
-    # TRAIN TEST SPLIT
-    # ========================================================
+    # --------------------------------------------------------
+    # Train / Test Split
+    # --------------------------------------------------------
 
     X_train, X_test, y_train, y_test = train_test_split(
         X,
@@ -106,28 +126,45 @@ def get_trained_model():
         stratify=y
     )
 
-    # Train
+    # --------------------------------------------------------
+    # Train model
+    # --------------------------------------------------------
+
     pipeline.fit(
         X_train,
         y_train
     )
 
-    # ========================================================
-    # EVALUATION
-    # ========================================================
+    # --------------------------------------------------------
+    # Prediction
+    # --------------------------------------------------------
 
-    y_pred = pipeline.predict(X_test)
+    y_pred = pipeline.predict(
+        X_test
+    )
+
+    # --------------------------------------------------------
+    # Accuracy
+    # --------------------------------------------------------
 
     acc = accuracy_score(
         y_test,
         y_pred
     )
 
+    # --------------------------------------------------------
+    # Classification Report
+    # --------------------------------------------------------
+
     report = classification_report(
         y_test,
         y_pred,
         output_dict=True
     )
+
+    # --------------------------------------------------------
+    # Confusion Matrix
+    # --------------------------------------------------------
 
     cm = confusion_matrix(
         y_test,
@@ -138,7 +175,7 @@ def get_trained_model():
     # FEATURE IMPORTANCE
     # ========================================================
 
-    # Get trained Random Forest
+    # Get Random Forest model
     rf_model = pipeline.named_steps[
         "classifier"
     ]
@@ -153,10 +190,12 @@ def get_trained_model():
 
     simple_names = []
 
-    # Convert encoded names into simple names
+    # --------------------------------------------------------
+    # Convert encoded names to original feature names
+    # --------------------------------------------------------
+
     for feature in encoded_features:
 
-        # Remove preprocessing prefixes
         feature = feature.replace(
             "num__",
             ""
@@ -167,7 +206,6 @@ def get_trained_model():
             ""
         )
 
-        # Determine original feature
         if feature.startswith("age"):
             simple_name = "Age"
 
@@ -207,9 +245,14 @@ def get_trained_model():
         else:
             simple_name = feature
 
-        simple_names.append(simple_name)
+        simple_names.append(
+            simple_name
+        )
 
-    # Create feature importance DataFrame
+    # --------------------------------------------------------
+    # Create Feature Importance DataFrame
+    # --------------------------------------------------------
+
     feature_importance_df = pd.DataFrame({
 
         "Feature": simple_names,
@@ -228,12 +271,18 @@ def get_trained_model():
     )
 
     # Sort
-    feature_importance_df = feature_importance_df.sort_values(
-        by="Importance",
-        ascending=False
+    feature_importance_df = (
+        feature_importance_df
+        .sort_values(
+            by="Importance",
+            ascending=False
+        )
     )
 
-    # Dataset information
+    # ========================================================
+    # DATASET INFORMATION
+    # ========================================================
+
     dataset_info = {
 
         "total_records": len(df),
@@ -250,7 +299,8 @@ def get_trained_model():
 
         "confusion_matrix": cm,
 
-        "feature_importance": feature_importance_df
+        "feature_importance":
+            feature_importance_df
     }
 
     return pipeline, dataset_info
@@ -264,13 +314,8 @@ model, info = get_trained_model()
 
 
 # ============================================================
-# 2. UI LAYOUT
+# 2. STREAMLIT TITLE
 # ============================================================
-
-st.set_page_config(
-    page_title="Student Attendance Prediction",
-    layout="centered"
-)
 
 st.title(
     "🎓 Student Attendance Predictor"
@@ -282,7 +327,7 @@ st.write(
 
 
 # ============================================================
-# INPUT COLUMNS
+# 3. INPUT COLUMNS
 # ============================================================
 
 col1, col2 = st.columns(2)
@@ -303,12 +348,21 @@ with col1:
 
     gender = st.selectbox(
         "Gender",
-        ["male", "female"]
+        [
+            "male",
+            "female"
+        ]
     )
 
     course = st.selectbox(
         "Course",
-        ["bca", "bsc", "bcom", "ba", "bba"]
+        [
+            "bca",
+            "bsc",
+            "bcom",
+            "ba",
+            "bba"
+        ]
     )
 
     year = st.selectbox(
@@ -331,7 +385,10 @@ with col1:
 
     internet_access = st.selectbox(
         "Internet Access",
-        ["yes", "no"]
+        [
+            "yes",
+            "no"
+        ]
     )
 
 
@@ -343,12 +400,18 @@ with col2:
 
     hostel_resident = st.selectbox(
         "Hostel Resident",
-        ["yes", "no"]
+        [
+            "yes",
+            "no"
+        ]
     )
 
     class_type = st.selectbox(
         "Class Type",
-        ["offline", "online"]
+        [
+            "offline",
+            "online"
+        ]
     )
 
     weather = st.selectbox(
@@ -385,7 +448,7 @@ with col2:
 
 
 # ============================================================
-# 3. PREDICTION BUTTON
+# 4. PREDICTION BUTTON
 # ============================================================
 
 if st.button(
@@ -393,7 +456,10 @@ if st.button(
     type="primary"
 ):
 
+    # --------------------------------------------------------
     # Create input DataFrame
+    # --------------------------------------------------------
+
     input_data = pd.DataFrame(
         [
             {
@@ -406,42 +472,58 @@ if st.button(
 
                 "year": year,
 
-                "parent_education": parent_education,
+                "parent_education":
+                    parent_education,
 
-                "internet_access": internet_access,
+                "internet_access":
+                    internet_access,
 
-                "hostel_resident": hostel_resident,
+                "hostel_resident":
+                    hostel_resident,
 
-                "class_type": class_type,
+                "class_type":
+                    class_type,
 
-                "weather": weather,
+                "weather":
+                    weather,
 
-                "study_hours": study_hours,
+                "study_hours":
+                    study_hours,
 
-                "sleep_hours": sleep_hours,
+                "sleep_hours":
+                    sleep_hours,
 
-                "travel_time_minutes": travel_time_minutes
-
+                "travel_time_minutes":
+                    travel_time_minutes
             }
         ]
     )
 
+    # --------------------------------------------------------
     # Prediction
+    # --------------------------------------------------------
+
     pred = model.predict(
         input_data
     )[0]
 
-    # Probability
+    # --------------------------------------------------------
+    # Prediction probability
+    # --------------------------------------------------------
+
     proba = model.predict_proba(
         input_data
     )[0]
 
-
-    # ========================================================
-    # RESULT
-    # ========================================================
+    # --------------------------------------------------------
+    # Display result
+    # --------------------------------------------------------
 
     st.markdown("---")
+
+    st.subheader(
+        "Prediction Result"
+    )
 
     if pred == 1:
 
@@ -457,23 +539,27 @@ if st.button(
             f"(Confidence: {proba[0] * 100:.1f}%)"
         )
 
+    # --------------------------------------------------------
+    # Probability bar
+    # --------------------------------------------------------
 
     st.progress(
         float(proba[1])
     )
 
     st.caption(
-        f"Absent Probability: {proba[0] * 100:.1f}% | "
-        f"Present Probability: {proba[1] * 100:.1f}%"
+        f"Absent Probability: "
+        f"{proba[0] * 100:.1f}% | "
+        f"Present Probability: "
+        f"{proba[1] * 100:.1f}%"
     )
 
 
 # ============================================================
-# 4. MODEL INFORMATION
+# 5. MODEL INFORMATION
 # ============================================================
 
 st.markdown("---")
-
 
 with st.expander(
     "📊 View Model & Training Details",
@@ -484,58 +570,74 @@ with st.expander(
         "Model Overview"
     )
 
+    # --------------------------------------------------------
+    # Metrics
+    # --------------------------------------------------------
 
     m_col1, m_col2, m_col3 = st.columns(3)
-
 
     m_col1.metric(
         "Model Architecture",
         "Random Forest"
     )
 
-
     m_col2.metric(
         "Test Accuracy",
         f"{info['accuracy'] * 100:.2f}%"
     )
 
-
     m_col3.metric(
-        "Total Dataset Size",
+        "Dataset Size",
         f"{info['total_records']} rows"
     )
 
+    # --------------------------------------------------------
+    # Training information
+    # --------------------------------------------------------
 
-    # ========================================================
-    # HYPERPARAMETERS
-    # ========================================================
+    st.markdown(
+        "#### Training Information"
+    )
+
+    st.write(
+        f"- **Total Records:** "
+        f"{info['total_records']}\n"
+        f"- **Training Records:** "
+        f"{info['train_records']}\n"
+        f"- **Testing Records:** "
+        f"{info['test_records']}\n"
+        f"- **Features:** "
+        f"{info['features_count']}"
+    )
+
+    # --------------------------------------------------------
+    # Hyperparameters
+    # --------------------------------------------------------
 
     st.markdown(
         "#### Hyperparameters & Configuration"
     )
 
     st.write(
+        "- **Algorithm:** Random Forest Classifier\n"
         "- **Estimators:** 100 Trees\n"
-        "- **Max Depth:** 10\n"
+        "- **Maximum Depth:** 10\n"
         "- **Train / Test Split:** 80% / 20%\n"
-        "- **Features Count:** 12 predictors\n"
+        "- **Random State:** 42\n"
         "- **Encoding:** One-Hot Encoding"
     )
 
-
     # ========================================================
-    # CLASSIFICATION METRICS
+    # CLASSIFICATION REPORT
     # ========================================================
 
     st.markdown(
-        "#### Detailed Classification Metrics"
+        "#### 📋 Classification Report"
     )
-
 
     df_report = pd.DataFrame(
         info["report"]
     ).transpose().round(2)
-
 
     st.dataframe(
         df_report,
@@ -543,81 +645,195 @@ with st.expander(
     )
 
 
-    # ========================================================
-    # FEATURE IMPORTANCE
-    # ========================================================
+# ============================================================
+# 6. CONFUSION MATRIX
+# ============================================================
 
-    st.markdown(
-        "#### 🌳 Random Forest Feature Importance"
-    )
+st.markdown("---")
 
-    st.write(
-        "This graph shows how important each student-related "
-        "feature is for predicting attendance."
-    )
+st.subheader(
+    "📊 Confusion Matrix"
+)
+
+st.write(
+    "The confusion matrix shows the number of correct "
+    "and incorrect attendance predictions."
+)
+
+# Get confusion matrix
+cm = info["confusion_matrix"]
+
+# Create figure
+fig_cm, ax_cm = plt.subplots(
+    figsize=(7, 5)
+)
+
+# Display matrix
+image = ax_cm.imshow(
+    cm,
+    interpolation="nearest",
+    cmap=plt.cm.Blues
+)
+
+# Color bar
+fig_cm.colorbar(
+    image,
+    ax=ax_cm
+)
+
+# Class labels
+class_labels = [
+    "Absent",
+    "Present"
+]
+
+# Set labels
+ax_cm.set(
+    xticks=range(len(class_labels)),
+    yticks=range(len(class_labels)),
+    xticklabels=class_labels,
+    yticklabels=class_labels,
+    ylabel="Actual Attendance",
+    xlabel="Predicted Attendance",
+    title="Confusion Matrix"
+)
+
+# Add numbers inside matrix
+threshold = cm.max() / 2
+
+for i in range(cm.shape[0]):
+
+    for j in range(cm.shape[1]):
+
+        ax_cm.text(
+            j,
+            i,
+            cm[i, j],
+            ha="center",
+            va="center",
+            color=(
+                "white"
+                if cm[i, j] > threshold
+                else "black"
+            ),
+            fontsize=14
+        )
+
+plt.tight_layout()
+
+# Display graph
+st.pyplot(
+    fig_cm
+)
+
+# ------------------------------------------------------------
+# Confusion Matrix Table
+# ------------------------------------------------------------
+
+st.markdown(
+    "#### Confusion Matrix Values"
+)
+
+cm_df = pd.DataFrame(
+    cm,
+    index=[
+        "Actual Absent",
+        "Actual Present"
+    ],
+    columns=[
+        "Predicted Absent",
+        "Predicted Present"
+    ]
+)
+
+st.dataframe(
+    cm_df,
+    use_container_width=True
+)
 
 
-    feature_df = info[
-        "feature_importance"
-    ].copy()
+# ============================================================
+# 7. FEATURE IMPORTANCE
+# ============================================================
+
+st.markdown("---")
+
+st.subheader(
+    "🌳 Random Forest Feature Importance"
+)
+
+st.write(
+    "This graph shows how important each student-related "
+    "feature is for predicting attendance."
+)
+
+# Get feature importance
+feature_df = info[
+    "feature_importance"
+].copy()
+
+# ------------------------------------------------------------
+# Feature Importance Graph
+# ------------------------------------------------------------
+
+fig, ax = plt.subplots(
+    figsize=(9, 6)
+)
+
+ax.barh(
+    feature_df["Feature"][::-1],
+    feature_df["Importance"][::-1]
+)
+
+ax.set_xlabel(
+    "Feature Importance"
+)
+
+ax.set_ylabel(
+    "Feature"
+)
+
+ax.set_title(
+    "Random Forest Feature Importance"
+)
+
+plt.tight_layout()
+
+# Display graph
+st.pyplot(
+    fig
+)
 
 
-    # Create graph
-    fig, ax = plt.subplots(
-        figsize=(9, 6)
-    )
+# ============================================================
+# FEATURE IMPORTANCE TABLE
+# ============================================================
+
+st.markdown(
+    "#### Feature Importance Values"
+)
+
+display_df = feature_df.copy()
+
+display_df["Importance"] = (
+    display_df["Importance"]
+    .round(4)
+)
+
+st.dataframe(
+    display_df,
+    use_container_width=True,
+    hide_index=True
+)
 
 
-    ax.barh(
-        feature_df["Feature"][::-1],
-        feature_df["Importance"][::-1]
-    )
+# ============================================================
+# 8. FOOTER
+# ============================================================
 
+st.markdown("---")
 
-    ax.set_xlabel(
-        "Feature Importance"
-    )
-
-
-    ax.set_ylabel(
-        "Feature"
-    )
-
-
-    ax.set_title(
-        "Random Forest Feature Importance"
-    )
-
-
-    plt.tight_layout()
-
-
-    # Display graph in Streamlit
-    st.pyplot(
-        fig
-    )
-
-
-    # ========================================================
-    # FEATURE IMPORTANCE TABLE
-    # ========================================================
-
-    st.markdown(
-        "#### Feature Importance Values"
-    )
-
-
-    display_df = feature_df.copy()
-
-
-    display_df["Importance"] = (
-        display_df["Importance"]
-        .round(4)
-    )
-
-
-    st.dataframe(
-        display_df,
-        use_container_width=True,
-        hide_index=True
-    )
+st.caption(
+    "Student Attendance Prediction using "
+    "Random Forest Classifier"
+)
