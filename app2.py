@@ -542,6 +542,84 @@ with st.expander(
         use_container_width=True
     )
 
+    st.dataframe(
+    df_report,
+    use_container_width=True
+)
+
+
+# ========================================================
+# CONFUSION MATRIX
+# ========================================================
+
+st.markdown("#### Confusion Matrix")
+
+st.write(
+    "The confusion matrix shows the number of correct and incorrect "
+    "attendance predictions."
+)
+
+cm = info["confusion_matrix"]
+
+fig_cm, ax_cm = plt.subplots(figsize=(6, 5))
+
+image = ax_cm.imshow(
+    cm,
+    interpolation="nearest",
+    cmap=plt.cm.Blues
+)
+
+fig_cm.colorbar(image)
+
+class_labels = [
+    "Absent",
+    "Present"
+]
+
+ax_cm.set(
+    xticks=range(len(class_labels)),
+    yticks=range(len(class_labels)),
+    xticklabels=class_labels,
+    yticklabels=class_labels,
+    ylabel="Actual Attendance",
+    xlabel="Predicted Attendance",
+    title="Confusion Matrix"
+)
+
+threshold = cm.max() / 2
+
+for i in range(cm.shape[0]):
+    for j in range(cm.shape[1]):
+        ax_cm.text(
+            j,
+            i,
+            cm[i, j],
+            ha="center",
+            va="center",
+            color="white" if cm[i, j] > threshold else "black",
+            fontsize=14
+        )
+
+plt.tight_layout()
+
+st.pyplot(fig_cm)
+
+cm_df = pd.DataFrame(
+    cm,
+    index=["Actual Absent", "Actual Present"],
+    columns=["Predicted Absent", "Predicted Present"]
+)
+
+st.dataframe(
+    cm_df,
+    use_container_width=True
+)
+
+
+# ========================================================
+# FEATURE IMPORTANCE
+# ========================================================
+
 
     # ========================================================
     # FEATURE IMPORTANCE
